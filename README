@@ -1,0 +1,7 @@
+Conexiones
+
+Raspberry Pi        MH-Z14A
+Pin 4 ------------- Pin V+
+Pin 6 ------------- Pin V-
+Pin 8 ------------- Pin R
+Pin 10 ------------ Pin T
