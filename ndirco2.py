@@ -24,6 +24,7 @@ DES_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86]
 # Configuramos la conexión serie según los datos del fabricante
 sensor = serial.Serial(
         port = '/dev/serial0',
+        # port = '/dev/ttyS0',
         baudrate = 9600,
         parity = serial.PARITY_NONE,
         stopbits = serial.STOPBITS_ONE,
@@ -34,7 +35,7 @@ sensor = serial.Serial(
 # Configuramos el sensor en el rango de medición de 0 - 2000 ppm. Cuanto más bajo es el rango, mejor es la precición.
 sensor.write(bytearray(RANGO1))
 # Configuramos el brillo de la pantalla
-fourletterphat.set_brightness(5)
+# fourletterphat.set_brightness(5)
 # Y limpiamos
 fourletterphat.clear()
 
@@ -44,9 +45,11 @@ while True:
     sensor.write(bytearray(PETICION))
     # Recogemos los nueve bits de la respuesta.
     respuesta = sensor.read(9)
+    print(respuesta)
     if len(respuesta) == 9:
         # El valor que buscamos se encuentra en el byte 2 (high byte) y 3 (low byte).
         valor_co2 = (respuesta[2] << 8) | respuesta[3]
+        print(valor_co2)
         # Esto es una ñapa para mostrar el 5 como un S. ¿Por qué? Porque el dibujo del 5 es un tanto extraño y me gusta mas la de la S.
         cadena = str(valor_co2).replace("5", "S")
         # Imprimos el valor en la pantalla y mostramos.
