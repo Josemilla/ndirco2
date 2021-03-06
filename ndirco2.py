@@ -4,7 +4,9 @@
 
 import time
 import serial
-import fourletterphat
+# import fourletterphat
+import scrollphathd
+from scrollphathd.fonts import font5x5
 
 # Comando para leer la concentración de CO2
 PETICION = [0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79]
@@ -20,6 +22,8 @@ CALIBRAR = [0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78]
 ACT_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0xA0, 0x00, 0x00, 0x00, 0x00, 0xE6]
 # Desactivar autocalibración
 DES_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86]
+
+BARRA_CO2 = 1000
 
 # Configuramos la conexión serie según los datos del fabricante
 sensor = serial.Serial(
@@ -37,7 +41,7 @@ sensor.write(bytearray(RANGO1))
 # Configuramos el brillo de la pantalla
 # fourletterphat.set_brightness(5)
 # Y limpiamos
-fourletterphat.clear()
+# fourletterphat.clear()
 
 # Entramos el bucle y no salimos nunca
 while True:
@@ -45,15 +49,23 @@ while True:
     sensor.write(bytearray(PETICION))
     # Recogemos los nueve bits de la respuesta.
     respuesta = sensor.read(9)
-    print(respuesta)
+    # print(respuesta)
     if len(respuesta) == 9:
         # El valor que buscamos se encuentra en el byte 2 (high byte) y 3 (low byte).
         valor_co2 = (respuesta[2] << 8) | respuesta[3]
-        print(valor_co2)
-        # Esto es una ñapa para mostrar el 5 como un S. ¿Por qué? Porque el dibujo del 5 es un tanto extraño y me gusta mas la de la S.
-        cadena = str(valor_co2).replace("5", "S")
-        # Imprimos el valor en la pantalla y mostramos.
-        fourletterphat.print_number_str(cadena)
-        fourletterphat.show()
+        # print(valor_co2)
+        # Imprimos el valor en la pantalla y mostramos.s
+        scrollphathd.clear()
+        if valor_co2 >= 1000:
+            x = 2
+        else:
+            x = 5
+        scrollphathd.write_string(str(valor_co2), x=x, y=0, font=font5x5, brightness = 0.1)
+        barra = valor_co2 / (BARRA_CO2 / 17)
+        for punto in range(int(barra)):
+            scrollphathd.set_pixel(punto, 6, 0.1)
+        scrollphathd.show()
+        # fourletterphat.print_number_str(cadena)
+        # fourletterphat.show()
     # Esperamos un segundo que es la velocidad con la que el sensor MH-Z14A funciona.
     time.sleep(1)
