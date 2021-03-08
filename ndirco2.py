@@ -23,77 +23,72 @@ ACT_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0xA0, 0x00, 0x00, 0x00, 0x00, 0xE6]
 # Desactivar autocalibración
 DES_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86]
 
-BARRA_CO2 = 1600
-BRILLO = 0.2
+MAXIMO_BARRA = 1000
+MINIMO_BARRA = 400
+BRILLO = 0.3
 
 # Configuramos la conexión serie según los datos del fabricante
 sensor = serial.Serial(
         port = '/dev/serial0',
-        # port = '/dev/ttyS0',
         baudrate = 9600,
         parity = serial.PARITY_NONE,
         stopbits = serial.STOPBITS_ONE,
         bytesize = serial.EIGHTBITS,
-        timeout = 1
-    )
+        timeout = 1)
 
-def imprime_scrollphat(dato, largo_barra):
+def imprime_scrollphat(dato):
     global BRILLO
+    global MAXIMO_BARRA
+    global MINIMO_BARRA
 
     if dato >= 1000:
         x = 1
     else:
-        x = 4
+        x = 5
 
     scrollphathd.clear()
     scrollphathd.write_string(str(dato), x=x, y=0, font=font3x5, brightness = BRILLO)
-    scrollphathd.fill(BRILLO, 0, 6, largo_barra, 1)
+    scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 6, int((dato - 400) / ((MAXIMO_BARRA - MINIMO_BARRA) / 17)), 1)
+    scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 5, 1, 2)
+    scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 8, 5, 1, 2)
+    scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 16, 5, 1, 2)
     scrollphathd.show()
 
+def obten_co2():
+    # Enviamos el comando para pedir el valor de CO2
+    sensor.write(bytearray(PETICION))
+    respuesta = sensor.read(9)
+    if len(respuesta) == 9:
+        # El valor que buscamos se encuentra en el byte 2 (high byte) y 3 (low byte).
+        return (respuesta[2] << 8) | respuesta[3]
 
 # Configuramos el sensor en el rango de medición de 0 - 2000 ppm. Cuanto más bajo es el rango, mejor es la precición.
 sensor.write(bytearray(RANGO1))
 
 # Por experiencia, el primer valor devuelto por el sensor es una medida errónea. Así que leemos y descartamos el valor.
-sensor.write(bytearray(PETICION))
-respuesta = sensor.read(9)
+obten_co2()
 time.sleep(1)
-
 # Volvemos a hacer un a lectura para mostrar el primer valor en la pantalla
-sensor.write(bytearray(PETICION))
-respuesta = sensor.read(9)
-if len(respuesta) == 9:
-        # El valor que buscamos se encuentra en el byte 2 (high byte) y 3 (low byte).
-        valor_co2_anterior = (respuesta[2] << 8) | respuesta[3]
-        imprime_scrollphat(valor_co2_anterior, 0)
+valor_co2_anterior = obten_co2()
+imprime_scrollphat(valor_co2_anterior)
 
 # Entramos el bucle y no salimos nunca
 while True:
     # Paramos un segundo en cada iteración del bucle
     time.sleep(1)
-    # Enviamos el comando para pedir el valor de CO2
-    sensor.write(bytearray(PETICION))
-    # Recogemos los nueve bits de la respuesta.
-    respuesta = sensor.read(9)
-    if len(respuesta) == 9:
-        # El valor que buscamos se encuentra en el byte 2 (high byte) y 3 (low byte).
-        valor_co2 = (respuesta[2] << 8) | respuesta[3]
-        # print(valor_co2)
-        # print(range(valor_co2_anterior, valor_co2))
-        # Calculamos la longitud de la barra. REPASAR ESTO.
-        barra = int(valor_co2 / (BARRA_CO2 / 17))
-        # Calculamos la direccion de bucle for
-        if valor_co2 > valor_co2_anterior:
-            direccion_for = 1
-        elif valor_co2 < valor_co2_anterior:
-            direccion_for = -1
-        else:
-            imprime_scrollphat(valor_co2, barra)
-            continue
-        
-        # Este for muestra la animación del conteo cuando cambia el valor
-        for digito in range(valor_co2_anterior, valor_co2, direccion_for):
-            # print(digito)
-            imprime_scrollphat(digito, barra)
+    valor_co2 = obten_co2()
+    # Calculamos la direccion de bucle for
+    if valor_co2 > valor_co2_anterior:
+        direccion_for = 1
+    elif valor_co2 < valor_co2_anterior:
+        direccion_for = -1
+    else:
+        imprime_scrollphat(valor_co2)
+        continue
+    
+    # Este for muestra la animación del conteo cuando cambia el valor
+    for digito in range(valor_co2_anterior, valor_co2, direccion_for):
+        imprime_scrollphat(digito)
+        if abs(valor_co2_anterior - valor_co2) <= 10:
             time.sleep(0.3)
-        valor_co2_anterior = valor_co2
+    valor_co2_anterior = valor_co2
