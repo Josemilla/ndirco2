@@ -31,7 +31,7 @@ print("Asegúrate que el módulo se encuentra a 400PPM, en un habitación muy ve
 while "La respuesta no es válida":
     respuesta = str(input("¿Calibrar? (s/n): ")).lower().strip()
     if respuesta[0] == 's':
-        sensor.write(bytearray(DES_AUTO_CALIBRACION))
+        sensor.write(bytearray(ACT_AUTO_CALIBRACION))
         sensor.write(bytearray(CALIBRAR))
         print("Módulo calibrado.")
         sys.exit(0)
