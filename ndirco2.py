@@ -2,16 +2,18 @@
 # Otro script para mostrar los datos del sensot MH-Z14A
 # 2021 Josema - josemalive@gmail.com
 
+# Librerías necesarias
 # pip install ephem
+# pip3 install scrollphathd
 
 import time
 import serial
 import scrollphathd
 from scrollphathd.fonts import font3x5
-import ephem
 from datetime import datetime as dt
 from datetime import timedelta
 import math
+import ephem
 
 # Comando para leer la concentración de CO2
 PETICION = [0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79]
@@ -31,6 +33,11 @@ DES_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86]
 MAXIMO_BARRA = 1000
 MINIMO_BARRA = 400
 BRILLO = None
+# Configurar aqui los datos de longitud, latitud y altura
+LONGITUD = '40.285408'
+LATITUD = '-3.788855'
+ALTURA = 660
+
 
 # Configuramos la conexión serie según los datos del fabricante
 sensor = serial.Serial(
@@ -41,8 +48,10 @@ sensor = serial.Serial(
         bytesize = serial.EIGHTBITS,
         timeout = 1)
 
+# En mi configuración actual tengo que invertir la pantalla
 scrollphathd.rotate(180)
 
+# Esta función imprime el valor en la pantalla
 def imprime_scrollphat(dato):
     global BRILLO
     global MAXIMO_BARRA
@@ -55,12 +64,14 @@ def imprime_scrollphat(dato):
 
     scrollphathd.clear()
     scrollphathd.write_string(str(dato), x = x, y = 1, font = font3x5, brightness = BRILLO)
+    # Las siguiente cuantro lineas imprimen un indicador en la parte inferior con 400ppm estará al 0 y con 1000ppm al 100%
     # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 6, int((dato - 400) / ((MAXIMO_BARRA - MINIMO_BARRA) / 17)), 1)
     # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 5, 1, 2)
     # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 8, 5, 1, 2)
     # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 16, 5, 1, 2)
     scrollphathd.show()
 
+# Esta función lee el valor de CO2 y lo devuelve
 def obten_co2():
     # Enviamos el comando para pedir el valor de CO2
     sensor.write(bytearray(PETICION))
@@ -69,28 +80,37 @@ def obten_co2():
         # El valor que buscamos se encuentra en el byte 2 (high byte) y 3 (low byte).
         return (respuesta[2] << 8) | respuesta[3]
 
+# Esta funcion usa la librería ephem para calcular si es de día en funcion de los datos de longitud y latitud y ajsuta la variable BRILLO
 def ajustar_brillo():
+    global LONGITUD
+    global LATITUD
+    global ALTURA
     global BRILLO
 
-    sol = ephem.Sun()
-    observador = ephem.Observer()
-    # ↓ Define your coordinates here ↓
-    observador.lat, observador.lon, observador.elevation = '40.285408', '-3.788855', 660
-    # ↓ Set the time (UTC) here ↓
-    observador.date = dt.utcnow()
-    sol.compute(observador)
-    # altitud_sol = sol.alt
-    # print(altitud_sol*180/math.pi)
-    # -16.8798870431°
-    angulo = (sol.alt * 180 / math.pi)
-    if  angulo > 0: # Es de día
+    # Sólo si el usuario ha configurado los datos de LON, LAT y ALT hacel el cáclculo...
+    if LONGITUD != 0 and LATITUD != 0 and ALTURA != 0: 
+        sol = ephem.Sun()
+        observador = ephem.Observer()
+        # ↓ Define your coordinates here ↓
+        observador.lat, observador.lon, observador.elevation = LONGITUD, LATITUD, ALTURA
+        # ↓ Set the time (UTC) here ↓
+        observador.date = dt.utcnow()
+        sol.compute(observador)
+        # altitud_sol = sol.alt
+        # print(altitud_sol*180/math.pi)
+        # -16.8798870431°
+        angulo = (sol.alt * 180 / math.pi)
+        if  angulo > 0: # Es de día
+            BRILLO = 0.3
+        else: # Es de noche
+            BRILLO = 0.1
+        # print (angulo)
+    # ...si no ponemos el brillo a 0.3
+    else:
         BRILLO = 0.3
-    else: # Es de noche
-        BRILLO = 0.1
-    # print (angulo)
 
 # Configuramos el sensor en el rango de medición de 0 - 2000 ppm. Cuanto más bajo es el rango, mejor es la precición.
-sensor.write(bytearray(RANGO2))
+sensor.write(bytearray(RANGO1))
 
 # Por experiencia, el primer valor devuelto por el sensor es una medida errónea. Así que leemos y descartamos el valor.
 obten_co2()
@@ -121,10 +141,12 @@ while True:
     # Este for muestra la animación del conteo cuando cambia el valor
     for digito in range(valor_co2_anterior, valor_co2, direccion_for):
         imprime_scrollphat(digito)
+        # Sólo si el salto entre valores es menor de 10 hacemos una pausa de 300ms. Si no lo fuera no hacemos pausa para que la animación no sea tediosa.
         if abs(valor_co2_anterior - valor_co2) <= 10:
             time.sleep(0.3)
     valor_co2_anterior = valor_co2
 
+    # Entramos cada minuto aqui para comprobar si es de día o de noche
     if dt.now() >= (hora_comprobacion_luz + timedelta(minutes=1)):
         # print("Sólo entro aqui cada minuto")
         ajustar_brillo()
