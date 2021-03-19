@@ -5,7 +5,9 @@
 # Librerías necesarias
 # pip install ephem
 # pip3 install scrollphathd
+# pip3 install pyserial
 # sudo apt install libatlas-base-dev
+# sudo apt install python3-smbus
 
 import time
 import serial
