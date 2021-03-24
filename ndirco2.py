@@ -33,7 +33,7 @@ ACT_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0xA0, 0x00, 0x00, 0x00, 0x00, 0xE6]
 # Desactivar autocalibración
 DES_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86]
 
-MAXIMO_BARRA = 1000
+MAXIMO_BARRA = 800
 MINIMO_BARRA = 400
 BRILLO = None
 # Configurar aqui los datos de longitud, latitud y altura
@@ -60,6 +60,7 @@ def imprime_scrollphat(dato):
     global MAXIMO_BARRA
     global MINIMO_BARRA
 
+    # Alinea la cifra siempre a la derecha, tenga 3 ó 4 cifras.
     if dato >= 1000:
         x = 1
     else:
