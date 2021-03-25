@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Otro script para mostrar los datos del sensot MH-Z14A
+# Otro script para mostrar los datos del sensor MH-Z14A
 # 2021 Josema - josemalive@gmail.com
 
 # Librerías necesarias
@@ -28,15 +28,16 @@ RANGO2 = [0xFF, 0x01, 0x99, 0x00, 0x00, 0x00, 0x13, 0x88, 0xCB]
 RANGO3 = [0xFF, 0x01, 0x99, 0x00, 0x00, 0x00, 0x27, 0x10, 0x2F]
 # Calibración
 CALIBRAR = [0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78]
-# Activar autocalibración
+# Activar auto calibración
 ACT_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0xA0, 0x00, 0x00, 0x00, 0x00, 0xE6]
-# Desactivar autocalibración
+# Desactivar auto calibración
 DES_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86]
 
 MAXIMO_BARRA = 800
 MINIMO_BARRA = 400
 BRILLO = None
-# Configurar aqui los datos de longitud, latitud y altura
+
+# Configurar aquí los datos de longitud, latitud y altura
 LONGITUD = '40.285408'
 LATITUD = '-3.788855'
 ALTURA = 660
@@ -84,14 +85,14 @@ def obten_co2():
         # El valor que buscamos se encuentra en el byte 2 (high byte) y 3 (low byte).
         return (respuesta[2] << 8) | respuesta[3]
 
-# Esta funcion usa la librería ephem para calcular si es de día en funcion de los datos de longitud y latitud y ajsuta la variable BRILLO
+# Esta funcion usa la librería ephem para calcular si es de día en función de los datos de longitud y latitud y ajusta la variable BRILLO
 def ajustar_brillo():
     global LONGITUD
     global LATITUD
     global ALTURA
     global BRILLO
 
-    # Sólo si el usuario ha configurado los datos de LON, LAT y ALT hacel el cáclculo...
+    # Sólo si el usuario ha configurado los datos de LON, LAT y ALT hacen el cálculo...
     if LONGITUD != 0 and LATITUD != 0 and ALTURA != 0: 
         sol = ephem.Sun()
         observador = ephem.Observer()
@@ -113,7 +114,7 @@ def ajustar_brillo():
     else:
         BRILLO = 0.3
 
-# Configuramos el sensor en el rango de medición de 0 - 2000 ppm. Cuanto más bajo es el rango, mejor es la precición.
+# Configuramos el sensor en el rango de medición de 0 - 2000 ppm. Cuanto más bajo es el rango, mejor es la precisión.
 sensor.write(bytearray(RANGO1))
 
 # Por experiencia, el primer valor devuelto por el sensor es una medida errónea. Así que leemos y descartamos el valor.
@@ -133,7 +134,7 @@ while True:
     # Paramos un segundo en cada iteración del bucle
     time.sleep(1)
     valor_co2 = obten_co2()
-    # Calculamos la direccion de bucle for
+    # Calculamos la dirección de bucle for
     if valor_co2 > valor_co2_anterior:
         direccion_for = 1
     elif valor_co2 < valor_co2_anterior:
@@ -150,8 +151,8 @@ while True:
             time.sleep(0.3)
     valor_co2_anterior = valor_co2
 
-    # Entramos cada minuto aqui para comprobar si es de día o de noche
+    # Entramos cada minuto aquí para comprobar si es de día o de noche
     if dt.now() >= (hora_comprobacion_luz + timedelta(minutes=1)):
-        # print("Sólo entro aqui cada minuto")
+        # print("Sólo entro aquí cada minuto")
         ajustar_brillo()
         hora_comprobacion_luz = dt.now()
