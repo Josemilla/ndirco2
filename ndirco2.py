@@ -145,8 +145,8 @@ while True:
     # Este for muestra la animación del conteo cuando cambia el valor
     for digito in range(valor_co2_anterior, valor_co2, direccion_for):
         imprime_scrollphat(digito)
-        # Sólo si el salto entre valores es menor de 10 hacemos una pausa de 300ms. Si no lo fuera no hacemos pausa para que la animación no sea tediosa.
-        if abs(valor_co2_anterior - valor_co2) <= 10:
+        # Sólo si el salto entre valores es menor de 15 hacemos una pausa de 300ms. Si no lo fuera no hacemos pausa para que la animación no sea tediosa.
+        if abs(valor_co2_anterior - valor_co2) <= 15:
             time.sleep(0.3)
     valor_co2_anterior = valor_co2
 
