@@ -42,7 +42,6 @@ LONGITUD = '40.285408'
 LATITUD = '-3.788855'
 ALTURA = 660
 
-
 # Configuramos la conexión serie según los datos del fabricante
 sensor = serial.Serial(
         port = '/dev/serial0',
@@ -114,19 +113,31 @@ def ajustar_brillo():
     else:
         BRILLO = 0.3
 
+# Mostramos mensaje de información en consola
+print("ndirCO2.py v1.0 - Josema - 30 de marzo de 2021 - josemalive@gmail.com\n")
+hora_comprobacion_luz = dt.now()
+ajustar_brillo()
+scrollphathd.clear()
+scrollphathd.write_string("HEAT", x = 1, y = 1, font = font3x5, brightness = BRILLO)
+scrollphathd.show()
+
 # Configuramos el sensor en el rango de medición de 0 - 2000 ppm. Cuanto más bajo es el rango, mejor es la precisión.
 sensor.write(bytearray(RANGO1))
 
 # Por experiencia, el primer valor devuelto por el sensor es una medida errónea. Así que leemos y descartamos el valor.
 obten_co2()
-time.sleep(1)
+
+# Esperamos tres minutos, tiempo que indica el fabricante para el calentamiento del sensor. El for muestra la cuenta atrás.
+print("Esperando al calentamiento del sensor (Control + C para saltar)...")
+try:
+    for segundos in range(180, 0, -1):
+        print(" " + str(segundos) + " segundos.  ", end="\r")
+        time.sleep(1)
+except KeyboardInterrupt:
+    pass
 
 # Volvemos a hacer un a lectura para mostrar el primer valor en la pantalla
 valor_co2_anterior = obten_co2()
-
-hora_comprobacion_luz = dt.now()
-ajustar_brillo()
-
 imprime_scrollphat(valor_co2_anterior)
 
 # Entramos el bucle y no salimos nunca
