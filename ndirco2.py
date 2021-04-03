@@ -33,9 +33,11 @@ ACT_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0xA0, 0x00, 0x00, 0x00, 0x00, 0xE6]
 # Desactivar auto calibración
 DES_AUTO_CALIBRACION = [0xFF, 0x01, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86]
 
-# MAXIMO_BARRA = 800
-# MINIMO_BARRA = 400
+MAXIMO_BARRA = 800
+MINIMO_BARRA = 400
 BRILLO = None
+# BRILLO_BAJO = 0.1 # Por la noche
+# BRILLO_ALTO = 0.3 # Por el día
 
 # Configurar aquí los datos de longitud, latitud y altura
 LONGITUD = '40.285408'
@@ -67,12 +69,16 @@ def imprime_scrollphat(dato):
         x = 5
 
     scrollphathd.clear()
-    scrollphathd.write_string(str(dato), x = x, y = 1, font = font3x5, brightness = BRILLO)
-    # Las siguiente cuatro lineas imprimen un indicador en la parte inferior con 400ppm estará al 0 y con 1000ppm al 100%
-    # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 6, int((dato - 400) / ((MAXIMO_BARRA - MINIMO_BARRA) / 17)), 1)
-    # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 5, 1, 2)
-    # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 8, 5, 1, 2)
-    # scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 16, 5, 1, 2)
+    # Sólo mostramos la barra por el día, es decir, en función del valor del brillo
+    if BRILLO == 0.1:
+        scrollphathd.write_string(str(dato), x = x, y = 1, font = font3x5, brightness = BRILLO)
+    else:
+        scrollphathd.write_string(str(dato), x = x, y = 0, font = font3x5, brightness = BRILLO)
+        # Las siguientes cuatro lineas imprimen un indicador en la parte inferior con 400ppm estará al 0 y con 1000ppm al 100%
+        scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 6, int((dato - 400) / ((MAXIMO_BARRA - MINIMO_BARRA) / 17)), 1)
+        scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 0, 5, 1, 2)
+        scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 8, 5, 1, 2)
+        scrollphathd.fill(BRILLO - 0.1 if BRILLO > 0.1 else BRILLO, 16, 5, 1, 2)
     scrollphathd.show()
 
 # Esta función lee el valor de CO2 y lo devuelve
@@ -137,6 +143,7 @@ try:
 except KeyboardInterrupt:
     pass
 
+# sensor.write(bytearray(RANGO1))
 # Vuelvo a pedir el valor de CO2 para intentar evitar el valor 3420 que devuelve al principio
 obten_co2()
 
